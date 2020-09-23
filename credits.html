@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body{
+                background-color: black;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="creditsScreen" style="z-index:1"></canvas><br/>
+        <audio id="credits">
+            <source src="" type="audio/mp3"/>
+        </audio>
+
+            
+
+
+
+
+            <script>
+
+                var y1 = 700;
+                var y2 = 800;
+                var y3 = 900;
+                var y4 = 1000;
+
+
+
+
+                canvas = document.getElementById("creditsScreen");
+                context = canvas.getContext("2d");
+
+                var canvasWidth = window.innerWidth; 
+			    var canvasHeight = window.innerHeight;
+
+                canvas.width = canvasWidth;
+			    canvas.height = canvasHeight;
+
+                function display(){
+                    context.clearRect(0,0, canvasWidth, canvasHeight);
+                    context.font = "30px Arial";
+                    context.fillStyle = 'yellow';
+                    context.fillText("Kick Boxing Pro: ", 530, y1-=8);
+                    context.fillText("Designed and developed by:", 450, y2-=8);
+                    context.fillText("Adel Rose", 570, y3-=8);
+                    context.fillText("Thank you for playing my game", 430, y4-=8);
+
+
+
+                    if(y4 <= -30){
+                        clearInterval(display);
+                        location.href = "Menu.html";
+                    }
+                    
+
+                }
+
+               var go = setInterval(display, 100);
+
+
+
+            </script>
+
+        
+       
+    </body>
+</html>

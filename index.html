@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body{
+                background-image: url("images/bg2.jpg");
+                background-repeat: no-repeat;
+                background-size:1365px 650px;
+            }
+      
+        </style>
+        
+    </head>
+
+    <body style="margin: 0">
+
+
+    <!-- CANVAS -->
+    <canvas id="BG" style="z-index:1; position:absolute;  top:0px;"></canvas>
+    <canvas id="npc" style="z-index:1; position:absolute;  top:0px; "></canvas>
+    <canvas id="Adel" style="z-index:1; position:absolute;  top:0px;"></canvas>
+    <canvas id="healthBar" style="z-index:1; position:absolute;  top:0px;"></canvas>
+    <canvas id="fightImage" style="z-index:1; position:absolute;  top:0px;"></canvas>
+    <canvas id="labels" style="z-index:1; position:absolute;  top:0px;"></canvas>
+    <canvas id="WinLose" style="z-index:1; position:absolute;  top:0px;"></canvas>
+        
+        
+
+
+        <!--Audio html elements-->
+        <audio id="punch">
+            <source src="sound/punch_sound.mp3" type="audio/mp3"/>
+        </audio>
+
+        <audio id="woosh">
+            <source src="sound/woosh_sound.mp3" type="audio/mp3"/>
+        </audio>
+
+        <audio id="bell">
+            <source src="sound/bell_sound.mp3" type="audio/mp3"/>
+        </audio>
+
+        <audio id="crowd">
+            <source src="sound/crowd_sound.mp3" type="audio/mp3"/>
+        </audio>
+
+        <audio id="bgs">
+            <source src="sound/bgm.mp3" type="audio/mp3"/>
+        </audio>
+
+
+        
+        <script>
+//..................... CANVAS SETTINGS.................................................................................
+
+            //Width and height for our canvas
+			var canvasWidth = window.innerWidth; //1250;      //1200      //1300; 
+			var canvasHeight = window.innerHeight;//650//570         //600;
+			
+			//Getting the canvas CANVAS SETTINGS
+            var AdelCanvas = document.getElementById('Adel');
+            var npcCanvas = document.getElementById('npc');
+            var bgCanvas = document.getElementById('BG');
+            var healthBarCanvas = document.getElementById('healthBar');
+            var fightImageCanvas = document.getElementById("fightImage");
+            var labelsCanvas = document.getElementById("labels");
+            var WinLoseCanvas = document.getElementById("WinLose");
+
+			//setting width and height of the canvas 
+			AdelCanvas.width = canvasWidth;
+			AdelCanvas.height = canvasHeight; 
+
+            npcCanvas.width = canvasWidth;
+            npcCanvas.height = canvasHeight;
+
+            bgCanvas.width = canvasWidth;
+            bgCanvas.height = canvasHeight;
+
+            healthBarCanvas.width = canvasWidth;
+            healthBarCanvas.height = canvasHeight;
+
+            fightImageCanvas.width = canvasWidth;
+            fightImageCanvas.height = canvasHeight;
+
+            labelsCanvas.width = canvasWidth;
+            labelsCanvas.height = canvasHeight;
+
+            WinLoseCanvas.width = canvasWidth;
+            WinLoseCanvas.height = canvasHeight;
+
+			//Establishing a context to the canvas 
+            var adelCanv = AdelCanvas.getContext("2d");
+
+            var npcCanv = npcCanvas.getContext("2d");
+
+            var bgCont = bgCanvas.getContext("2d");
+
+            var healthBarCont = healthBarCanvas.getContext("2d");
+
+            var fightImageCont = fightImageCanvas.getContext("2d");
+
+            var labelsCont = labelsCanvas.getContext("2d");
+
+            var WinLoseCont = WinLoseCanvas.getContext("2d");
+
+           //DRAWING BACKGROUND IMAGE ON BACKGROUND CANVAS
+            var backgroundImage = new Image();
+            backgroundImage.src="images/bg2.jpg";
+
+            backgroundImage.onload = function(){
+                //bgCont.drawImage(backgroundImage, 0, 0, canvasWidth, canvasHeight);
+                labelsCont.fillStyle = "yellow";
+                labelsCont.font = "20px Rock it";
+                labelsCont.fillText("Player's Health", 120, 50);
+                labelsCont.fillText("Opponent's Health", 1000, 50);
+            }
+
+
+
+
+
+
+
+
+           
+           
+           
+//..................... SPRITES SHEET SETTINGS............................................................................
+
+			//the with and height of our spritesheet 
+			var spriteSheetWidth = 2100; 
+			var spriteSheetHeight = 2800; 
+
+			//we are having two rows and 8 cols in the current sprite sheet
+			var rows = 7; 
+			var cols = 7; 
+
+			//To get the width of a single sprite we divided the width of sprite with the number of cols
+			//because all the sprites are of equal width and height 
+			var width = spriteSheetWidth/cols; 
+			var height = spriteSheetHeight/rows; 
+			
+			//Each row contains 7 frame(sprite) and at start we will display the first frame (assuming the index from 0)
+			var curFrameHor = 0;
+            var curFrameVer = 0;
+
+            var curFrameHorNpc = 0;
+            var curFrameVerNpc = 0;
+ 			
+			//The total frame is 2 
+			var frameCount = 7;
+			
+			//starting x and y coordinates(screen drawing positions) to render the sprite 
+			var x=50;
+            var y=230;
+
+            var xNPC = 980;
+            var yNPC = 230;
+            
+			//x and y coordinates of the canvas to get the single frame 
+			var srcX=0; 
+			var srcY=0;
+
+            var srcXnpc=0; 
+			var srcYnpc=0;
+             
+			//tracking the movement left and write 
+			var left = false;
+ 
+            //Assuming that at start the character will move right side 
+            var right = false;
+			
+			//Speed of the movement 
+			var speed = 20; 
+			
+			//Creating an Image object for our character 
+            var AdelStatic = new Image();
+            var npcSheet = new Image(); 
+
+			//Setting the source to the image file 
+            AdelStatic.src = "images/normal_sheet15.png";
+            npcSheet.src = "images/npc_sheet5.png";
+      
+
+
+
+          
+          
+//...........................UPDATING FRAMES OF SHEETS.............................................................................................
+            function updateFrameAdel() {
+                left = false;
+                right = false;
+                
+
+                if (curFrameHor <= 7) {
+                    curFrameHor++;
+                    if (curFrameHor == 7) {
+                        curFrameHor = 0;
+                    }
+                } 
+                    //Calculating the x coordinate for spritesheet 
+                    srcX = curFrameHor * width;
+                    srcY = curFrameVer * height; 
+                         
+                    }
+
+
+
+
+
+
+
+
+////////////////NPC AUTOMATION////////////////////////////////////////////////////////////////////////////////////////
+               var movingNPCLeft = false;
+               var movingNPCRight = false;
+
+             function updateFrameNPC() {
+                left = false;
+                right = false;
+                
+                    //Updating the frame index 
+                   // curFrame = ++curFrame % frameCount;
+                if (curFrameHorNpc <= 7) {
+                    curFrameHorNpc++;
+                    if (curFrameHorNpc == 7) {
+                        curFrameHorNpc = 0;
+                    }
+                } 
+                    //Calculating the x coordinate for spritesheet 
+                    srcXnpc = curFrameHorNpc * width;
+                    srcYnpc = curFrameVerNpc * height; 
+
+               
+
+                    if (movingNPCLeft == true) {
+
+                        if (xNPC >= x+50 && xNPC <= 980) {
+                            xNPC -= 20;
+                            curFrameVerNpc = 1;
+
+                        }
+
+                        if(xNPC <= x+50){
+                        var randonFrame = Math.floor((Math.random()*4)+1);
+                        curFrameVerNpc = randonFrame;
+                        npcStamina -= 5;
+                        drawStaminaBar(healthBarCont, 1360, 110, -300, 10, npcStamina, 100);
+                        playWooshAudio();
+                        
+                        }
+
+                       
+
+                        if (npcStamina <= 0) {
+                            movingNPCLeft = false;
+                            movingNPCRight = true;
+                        }
+                 }
+
+                     if(movingNPCRight == true){
+                        if(xNPC >= 70 && xNPC <= 980){
+                            xNPC += 20;
+                            curFrameVerNpc = 1;   
+                        }    
+                     }
+
+                     if(xNPC >= 980){
+                                movingNPCRight = false;
+                                curFrameVerNpc = 4;
+                                if(npcStamina < 100){
+                                    npcStamina += 5;
+                                    drawStaminaBar(healthBarCont, 1360, 110, -300, 10, npcStamina, 100);
+                                }
+
+                                if (npcStamina >= 100) {
+                                     movingNPCLeft = true;
+                                 }
+                                
+                                
+                            }
+                                
+                    }
+             
+
+                    
+
+
+
+
+
+
+
+
+
+
+//.............................................DRAW FUNCTIONS..........................................................................................................
+var playerHealth = 100;
+var npcHealth = 100;
+var playerStamina = 100;
+var npcStamina = 100;
+
+//DRAWING HEALTH BARS
+drawHealthBar(healthBarCont, 10, 70, 450, 30, playerHealth, 100);
+drawHealthBar(healthBarCont, 1360, 70, -450, 30, npcHealth, 100);
+
+drawStaminaBar(healthBarCont, 10, 110, 300, 10, playerStamina, 100);
+drawStaminaBar(healthBarCont, 1360, 110, -300, 10, npcStamina, 100);
+
+
+            
+
+
+
+
+function drawAdel(){
+
+//Updating the frame 
+updateFrameAdel();
+
+//each time frame is updated, need to clear previous one.
+adelCanv.clearRect(0,y,2100,height);
+//adelCanv.clearRect(1000,y,width,height);
+
+//draw Adel
+adelCanv.drawImage(AdelStatic,srcX,srcY,width,height,x,y,width,height);
+// ctx.drawImage(character,srcX,srcY,width,height,x,y,width,height);
+
+
+
+//enemy health depleating after player strike(collision detection)
+if( (curFrameVerNpc != 4 ) && (x > xNPC-60) && (curFrameVer == 2) ){
+    
+        playPunchAudio();
+        npcHealth -= 1;
+        drawHealthBar(healthBarCont, 1360, 70, -450, 30, npcHealth, 100);
+        curFrameVerNpc = 5;      
+   }
+
+   if( (curFrameVerNpc != 4 ) && (x > xNPC-60) && (curFrameVer == 3) ){
+    playPunchAudio();
+    npcHealth -= 5;
+    drawHealthBar(healthBarCont, 1360, 70, -450, 30, npcHealth, 100);
+    curFrameVerNpc = 5;
+}
+
+if(x <= 100){
+    if(playerStamina >= 0 && playerStamina <100){
+    playerStamina += 5;
+    drawStaminaBar(healthBarCont, 10, 110, 300, 10, playerStamina, 100);}
+
+}
+
+}
+
+
+
+
+
+
+
+function drawNPC(){
+    updateFrameNPC();
+
+    npcCanv.clearRect(0,y,2100,height);
+
+
+    npcCanv.drawImage(npcSheet,srcXnpc,srcYnpc,width,height,xNPC,yNPC,width,height);
+
+
+   //health depleating after enemy strike(collision detection)
+   
+   if( (curFrameVer != 4 && curFrameVer != 5) && (xNPC < x+50) && (curFrameVerNpc == 2 ) ){
+           
+           playPunchAudio();
+           //healthBarCont.clearRect(0,0,canvasWidth,canvasHeight);
+           playerHealth -= 1;
+           
+           drawHealthBar(healthBarCont, 10, 70, 450, 30, playerHealth, 100);
+           
+           
+           curFrameVer = 6;
+        
+   }
+   if( (curFrameVer != 4 && curFrameVer != 5) && (xNPC < x+50) && (curFrameVerNpc == 3) ){
+       
+
+       playPunchAudio();
+       playerHealth -= 5;
+
+       drawStaminaBar(healthBarCont, 1360, 110, -300, 10, npcStamina, 100);
+       
+       curFrameVer = 6;
+        }        
+}
+
+
+function moveNPCLeft(){
+    if(npcStamina == 100){
+        movingNPCLeft = true;
+    }
+    
+}
+
+
+function drawAdelMoveRight(){
+    right=true;
+
+    if ((right) && (x < (xNPC-50) )) {
+
+                    x += 25;               
+                }
+}
+
+function drawAdelMoveLeft(){
+    right=false;
+    left = true;
+
+    if (left && x > 50) {
+                    x -= 25;
+                }
+}
+
+
+
+
+
+//draw health bar funtion
+
+function drawHealthBar(canv, x, y, w, h, health, max_health){
+    if(health >= max_health){health = max_health;}
+    if(health <= 0){health = 0;}
+    canv.fillStyle = '#000000';
+    canv.fillRect(x, y, w, h);
+    var colorNumber = Math.round((1 - (health/max_health))*0xff)*0x10000+Math.round((health/max_health)*0xff)*0x100;
+    var colorString = colorNumber.toString(16);
+    if(colorNumber >= 0x100000){
+        canv.fillStyle = '#'+colorString;
+    }else if (colorNumber << 0x100000 && colorNumber >= 0x10000){
+        canv.fillStyle = '#0'+colorString;
+
+    }else if(colorNumber << 0x10000){
+        canv.fillStyle = '#00'+colorString;
+    }
+    canv.fillRect(x+1, y+1, (health/max_health)*(w-2), h-2);
+
+}
+
+
+
+
+function drawStaminaBar(canv, x, y, w, h, health, max_health){
+    if(health >= max_health){health = max_health;}
+    if(health <= 0){health = 0;}
+    canv.fillStyle = '#000000';
+    canv.fillRect(x, y, w, h);
+    var colorNumber = Math.round((1 - (health/max_health))*0xff)*0x10000+Math.round((health/max_health)*0xff)*0x100;
+    var colorString = colorNumber.toString(16);
+    if(colorNumber >= 0x100000){
+        canv.fillStyle = '#'+colorString;
+    }else if (colorNumber << 0x100000 && colorNumber >= 0x10000){
+        canv.fillStyle = '#0'+colorString;
+
+    }else if(colorNumber << 0x10000){
+        canv.fillStyle = "#afeeee";
+    }
+    canv.fillRect(x+1, y+1, (health/max_health)*(w-2), h-2);
+
+}
+
+
+
+//fight announcement function
+            var fightImage = new Image();
+            fightImage.src = "images/FI.png";
+           
+            var alpha = 1;
+
+             function drawFightImage(){
+                 fightImageCont.globalAlpha = alpha;
+                 fightImageCont.clearRect(0,10,2100,2000);
+                 fightImageCont.drawImage(fightImage, -60, 150, 1500, 500 );
+                 alpha -= 0.1;               
+            }
+
+
+
+
+
+
+
+
+
+
+
+//......................................................................................................................
+
+//....................Sound Functions..................................................................................................
+var punchSound = document.getElementById("punch");
+var wooshSound = document.getElementById("woosh");
+var bellSound = document.getElementById("bell");
+var crowdSound = document.getElementById("crowd");
+var bgmSound = document.getElementById("bgs");
+
+function playPunchAudio() {
+  punchSound.play();
+}
+function playWooshAudio() {
+  wooshSound.play();
+}
+function playBellAudio() {
+  bellSound.play();
+}
+function playCrowdAudio() {
+  crowdSound.play();
+}
+
+function playbgsAudio() {
+  bgmSound.play();
+}
+
+
+//GAME OVER FUNCTION stops drawing sprites when health is 0
+var XCOR = -1000;
+function gameOver(){
+    if((playerHealth <= -1) || (npcHealth <= -1)){
+        
+         var closingImage = new Image();
+         var source;
+         if(playerHealth <= 0){source = "images/lost.jpg";}
+         if(npcHealth <= 0){source = "images/won.jpg";}
+         closingImage.src = source;
+         
+         if(XCOR <= 170){
+            WinLoseCont.clearRect(0,10,2100,2000);
+            WinLoseCont.drawImage(closingImage, XCOR += 20, 150, 1000, 450 );
+            
+         }
+
+         stopNPCMovement();
+         stopAdel();
+         stopNPC();
+
+        // clearInterval(exeGameOver);    
+    }
+   
+}
+
+function stopAdel(){
+    clearInterval(exeDrawAdel);
+    clearInterval(exeDrawFightImage);
+
+}
+function stopNPC(){
+    clearInterval(exeDrawNPC);
+
+}
+function stopNPCMovement(){
+    moveNPCLeft = false;
+    clearInterval(exeMoveNPCLeft);
+
+}
+//......................................................................................................................
+
+
+
+
+
+
+
+
+//............................................COMMAND AND CONTROL...................................................................................................
+
+var exeDrawFightImage = setInterval(drawFightImage, 100);
+var exeDrawAdel = setInterval(drawAdel,150);
+var exeDrawNPC = setInterval(drawNPC, 150);
+var exeMoveNPCLeft = moveNPCLeft();
+var exeGameOver = setInterval(gameOver, 50);
+
+
+        
+playCrowdAudio();
+playbgsAudio();
+
+
+
+//.......................................................................................................................
+
+
+
+//USER INPUT CAPTURE...............................................................................................
+document.onkeydown = function checkKey(e) {
+
+e = e || window.event;
+
+if (e.keyCode == '38') {
+    // up arrow
+
+}
+else if (e.keyCode == '40') {
+    // down arrow
+
+}
+else if (e.keyCode == '37') {
+    // left arrow
+    drawAdelMoveLeft();
+    curFrameVer = 1;
+}
+else if (e.keyCode == '39') {
+    // right arrow
+    drawAdelMoveRight();
+    curFrameVer = 1;
+}
+else if (e.keyCode == '90') {
+    // z
+    if(playerStamina > 0){
+    curFrameVer = 2;
+    playerStamina -= 5;
+    drawStaminaBar(healthBarCont, 10, 110, 300, 10, playerStamina, 100);
+    playWooshAudio();
+    }
+}
+else if (e.keyCode == '88') {
+    //x
+    if(playerStamina > 0){
+    curFrameVer = 3;
+    playerStamina -= 5;
+    drawStaminaBar(healthBarCont, 10, 110, 300, 10, playerStamina, 100);
+    playWooshAudio();
+    }
+}
+else if (e.keyCode == '67') {
+    //c
+    curFrameVer = 4;
+}
+else if (e.keyCode == '66') {
+    //c
+    curFrameVer = 5;
+}
+}
+
+
+document.onkeyup = function checkKey(e){
+     if (e.keyCode == '39') {
+    // right arrow
+    drawAdelMoveRight();
+    curFrameVer = 0;
+}
+else if (e.keyCode == '37') {
+    // left arrow
+    drawAdelMoveLeft();
+    curFrameVer = 0;
+}
+else if (e.keyCode == '90') {
+    // right arrow
+    curFrameVer = 0;
+}
+else if (e.keyCode == '88') {
+    // right arrow
+    curFrameVer = 0;
+}
+else if (e.keyCode == '67') {
+    // right arrow
+    curFrameVer = 0;
+}
+else if (e.keyCode == '66') {
+    //c
+    curFrameVer = 0;
+}
+}
+
+
+        </script>
+    </body>
+</html>
